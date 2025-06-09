@@ -1,0 +1,67 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.5'
+    id 'java'
+    id 'idea'
+    id "com.microsoft.azure.azurewebapp" version "1.1.0"
+}
+
+java{
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'org.postgresql:postgresql:42.7.0'
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.13.1'
+
+    testImplementation('com.jayway.jsonpath:json-path')
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+
+    implementation 'org.springframework.security:spring-security-crypto:6.1.1'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11'
+
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+//    implementation 'org.springframework.boot:spring-boot-starter-security'
+//    testCompile group: 'junit', name: 'junit'
+
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+azurewebapp {
+    subscription = '64abfb70-1787-4113-a2a4-9f4f363b5946'
+    resourceGroup = 'Thesis'
+    appName = 'lane-detection-server'
+    pricingTier = 'B1'
+    region = 'northeurope'
+    runtime {
+        os = 'Linux'
+        webContainer = 'java'
+        javaVersion = 'Java 17'
+    }
+}

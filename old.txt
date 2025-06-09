@@ -1,0 +1,37 @@
+
+//
+//        try {
+////            if(optionalUser.isPresent() && optionalUser.get().getPassword().equals(Encryption.toHexString(Encryption.getSHA(user.getPassword())))){
+//            if(optionalUser.isPresent() && optionalUser.get().getPassword().equals(user.getPassword())){
+//                //return token
+////                return optionalUser.get().getId();
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body("Login successful");
+//            }
+////        } catch (NoSuchAlgorithmException e) {
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                .body("Login failed");
+
+//
+//    @RequestMapping(value="/{id}", method= RequestMethod.DELETE)
+//    public ResponseEntity<?> delete(@PathVariable Long id){
+//        System.out.println("Deleting ride ... " + id);
+//        try {
+//            rideRepository.delete(id);
+//            return new ResponseEntity<Ride>(HttpStatus.OK);
+//        }catch (RuntimeException ex){
+//            System.out.println("Ctrl Delete ride exception");
+//            return new ResponseEntity<String>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+//        }
+//    }
+//
+//    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+//    public Ride update(@PathVariable Long id, @RequestBody Ride ride) {
+//        System.out.println("Updating ride ...");
+//        ride.setId(id);
+//        rideRepository.update(ride);
+//        return ride;
+//    }
