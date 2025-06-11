@@ -29,14 +29,14 @@ public class WarningRepository implements IWarningRepository{
     }
 
     public Optional<Warning> add(Warning entity){
-        String sqlWithTimestamp = "INSERT INTO warnings (report_id, text, lat, lng, created_at) VALUES (?,?,?,?,?)";
-        String sqlWithoutTimestamp = "INSERT INTO warnings (report_id, text, lat, lng) VALUES (?,?,?,?)";
-        String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp; sql += " RETURNING id, created_at";
+        String sqlWithTimestamp = "INSERT INTO warnings (report_id, text, lat, lng, created_at) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?,?)";
+        String sqlWithoutTimestamp = "INSERT INTO warnings (report_id, text, lat, lng) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?)";
+        String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp;
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            connection.setAutoCommit(false);
+//            connection.setAutoCommit(false);
 
             preparedStatement.setLong(1, entity.getReport_id());
             preparedStatement.setString(2, entity.getText());

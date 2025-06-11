@@ -30,14 +30,14 @@ public class ReportRepository implements IReportRepository {
     }
 
     public Optional<Report> add(Report entity) {
-        String sqlWithTimestamp = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng, created_at) VALUES (?,?,?,?,?,?)";
-        String sqlWithoutTimestamp = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng) VALUES (?,?,?,?,?)";
-        String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp; sql += " RETURNING id, created_at";
+        String sqlWithTimestamp = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng, created_at) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?,?,?)";
+        String sqlWithoutTimestamp = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?,?)";
+        String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp;
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            connection.setAutoCommit(false);
+//            connection.setAutoCommit(false);
 
             preparedStatement.setLong(1, entity.getUser_id());
             preparedStatement.setDouble(2, entity.getStart_lat());
