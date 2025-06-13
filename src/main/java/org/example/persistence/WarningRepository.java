@@ -1,9 +1,11 @@
 package org.example.persistence;
-
 import org.example.domain.Warning;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
@@ -11,11 +13,11 @@ import java.util.Optional;
 @Component
 public class WarningRepository implements IWarningRepository{
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public WarningRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
@@ -28,40 +30,53 @@ public class WarningRepository implements IWarningRepository{
         return null;
     }
 
-    public Optional<Warning> add(Warning entity){
-        String sqlWithTimestamp = "INSERT INTO warnings (report_id, text, lat, lng, created_at) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?,?)";
-        String sqlWithoutTimestamp = "INSERT INTO warnings (report_id, text, lat, lng) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?)";
-        String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp;
+    @Override
+    public Optional<Warning> add(Warning entity) {
+        try {
+            String sqlWithTimestamp = "INSERT INTO warnings (report_id, text, lat, lng, created_at) VALUES (?,?,?,?,?)";
+            String sqlWithoutTimestamp = "INSERT INTO warnings (report_id, text, lat, lng) VALUES (?,?,?,?)";
+            String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp;
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
 
-//            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setLong(1, entity.getReport_id());
+                ps.setString(2, entity.getText());
+                ps.setDouble(3, entity.getLat());
+                ps.setDouble(4, entity.getLng());
+                if (entity.getCreated_at() != null) {
+                    ps.setLong(5, entity.getCreated_at());
+                }
+                return ps;
+            }, keyHolder);
 
-            preparedStatement.setLong(1, entity.getReport_id());
-            preparedStatement.setString(2, entity.getText());
-            preparedStatement.setDouble(3, entity.getLat());
-            preparedStatement.setDouble(4, entity.getLng());
-            if (entity.getCreated_at() != null) {
-                preparedStatement.setLong(5, entity.getCreated_at());
-            }
-
-            ResultSet rs = preparedStatement.executeQuery();
-            if (rs.next()) {
-                entity.setId(rs.getLong("id"));
-                entity.setCreated_at(rs.getLong("created_at"));
+            if (keyHolder.getKey() != null) {
+                entity.setId(keyHolder.getKey().longValue());
                 return Optional.of(entity);
             } else {
                 return Optional.empty();
             }
-        } catch (NullPointerException | SQLException e){
-            throw new RepositoryException("WarningRepository: " + e);
+        } catch (DataAccessException e) {
+            throw new RepositoryException("WarningRepository: Failed to add warning", e);
         }
     }
 
     @Override
     public Optional<Warning> delete(Long aLong) {
-        return Optional.empty();
+        try {
+            Optional<Warning> entityOpt = findOne(aLong);
+
+            if (entityOpt.isEmpty()) {
+                return Optional.empty();
+            }
+
+            int affectedRows = jdbcTemplate.update("DELETE FROM warnings WHERE id = ?", aLong);
+
+            return affectedRows > 0 ? entityOpt : Optional.empty();
+        } catch (DataAccessException e) {
+            throw new RepositoryException("WarningRepository: Failed to delete report", e);
+        }
     }
 
     @Override

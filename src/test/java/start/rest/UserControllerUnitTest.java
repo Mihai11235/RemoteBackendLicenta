@@ -1,5 +1,4 @@
 package start.rest;
-//package start.rest;
 
 import org.example.domain.User;
 import org.example.persistence.IUserRepository;
@@ -17,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,9 +33,6 @@ class UserControllerUnitTest {
     @MockBean
     private IUserRepository userRepository;
 
-//    @Autowired
-//    private JwtService jwtService;
-
     @MockBean
     private JwtService jwtService;
 
@@ -45,54 +40,6 @@ class UserControllerUnitTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
-    @Test
-    void testGetById_UserExists() throws Exception {
-        User user = new User();
-        user.setId(333L);
-        user.setUsername("testuser");
-
-        Mockito.when(userRepository.findOne(333L)).thenReturn(Optional.of(user));
-
-        mockMvc.perform(get("/users/333"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("testuser"));
-    }
-//
-//    @Test
-//    void testGetByUsername_UserExists() throws Exception {
-//        User user = new User();
-//        user.setId(1L);
-//        user.setUsername("testuser");
-//
-//        Mockito.when(userRepository.findOneByUsername("testuser")).thenReturn(Optional.of(user));
-//
-//        mockMvc.perform(get("/users/1"))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.username").value("testuser"));
-//    }
-
-//    @Test
-//    void testGetByUsername_UserExists_withValidJwt_returnsUser() throws Exception {
-//        // Create mock user and generate JWT
-//        User testUser = new User();
-//        testUser.setUsername("testuser");
-//        String jwt = jwtService.generateToken(testUser);
-//
-//        mockMvc.perform(get("/users/me")
-//                        .header("Authorization", "Bearer " + jwt))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.username").value("testuser"));
-//    }
-
-    @Test
-        void testGetById_UserNotFound() throws Exception {
-        Mockito.when(userRepository.findOne(333L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/users/333"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("User not found"));
-    }
 
     @Test
     void testCreateUser_Success() throws Exception {
@@ -121,7 +68,7 @@ class UserControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("User could not be created"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("User could not be created!")));
     }
 
     @Test
@@ -148,7 +95,7 @@ class UserControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Username already exists"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Username already exists!")));
     }
 
 
@@ -178,7 +125,7 @@ class UserControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Login failed! Incorrect username or password"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Login failed! Incorrect username or password!")));
     }
 
     @Test
@@ -189,6 +136,6 @@ class UserControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Missing username or password"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Missing username or password")));
     }
 }

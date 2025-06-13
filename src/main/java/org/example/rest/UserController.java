@@ -41,7 +41,7 @@ public class UserController {
             if(userRepository.findOneByUsername(user.getUsername()).isPresent()){
                 return ResponseEntity
                         .badRequest()
-                        .body(Map.of("error", "Username already exists"));
+                        .body(Map.of("error", "Username already exists!\n"));
             }
 
             Optional<User> optionalUser = userRepository.add(user);
@@ -49,7 +49,7 @@ public class UserController {
             if (optionalUser.isEmpty()) {
                 return ResponseEntity
                         .badRequest()
-                        .body(Map.of("error", "User could not be created"));
+                        .body(Map.of("error", "User could not be created!\n"));
             }
 
             URI location = URI.create("/users/" + optionalUser.get().getId());
@@ -70,10 +70,10 @@ public class UserController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<?> login(@RequestBody User user) {
         try{
-            if (user.getPassword() == null || user.getUsername() == null) {
+            if (user.getPassword() == null || user.getUsername() == null || user.getPassword().isEmpty()) {
                 return ResponseEntity
                         .badRequest()
-                        .body(Map.of("error", "Missing username or password"));
+                        .body(Map.of("error", "Missing username or password!\n"));
             }
 
             Optional<User> optionalUser = userRepository.findOneByUsername(user.getUsername());
@@ -81,7 +81,7 @@ public class UserController {
             if (optionalUser.isEmpty() ||
                     !BCrypt.checkpw(user.getPassword(), optionalUser.get().getPassword())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Login failed! Incorrect username or password"));
+                        .body(Map.of("error", "Login failed! Incorrect username or password!\n"));
             }
 
             JwtService jwtService = new JwtService();
@@ -102,13 +102,13 @@ public class UserController {
 
             if (username == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Missing or invalid token"));
+                        .body(Map.of("error", "Missing or invalid token!\n"));
             }
 
             Optional<User> optionalUser = userRepository.findOneByUsername(username);
             if (optionalUser.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "User not found"));
+                        .body(Map.of("error", "User not found!\n"));
             }
 
             User user = optionalUser.get();

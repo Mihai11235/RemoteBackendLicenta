@@ -22,18 +22,20 @@ public class ReportValidator implements Validator<Report> {
     public void validate(Report entity) throws ValidationException {
         String errors = "";
 
-        if(entity == null){}
+        if(entity == null || entity.getStart_lat() == null || entity.getStart_lng() == null || entity.getEnd_lat() == null || entity.getEnd_lng() == null){
+            errors += "Missing report fields.\n";
+        }
 
         if(!validLat(entity.getStart_lat()) || !validLat(entity.getEnd_lat())
         || !validLng(entity.getStart_lng()) || !validLng(entity.getEnd_lng())) {
-            errors += "Invalid lat/lng coordinates.\n";
+            errors += "Invalid lat/lng coordinates!\n";
         }
 
         if(entity.getWarnings() == null) {
-            errors += "Warnings cannot be null.\n";
+            errors += "Warnings cannot be null!\n";
         }
         else if(entity.getWarnings().isEmpty()) {
-            errors += "No warnings found.\n";
+            errors += "No warnings found!\n";
         }
         if(!errors.isEmpty()){
             throw new ValidationException("ReportValidator: " + errors);

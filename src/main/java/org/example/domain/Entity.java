@@ -20,7 +20,7 @@ public class Entity<ID> implements Serializable {
         if (this == o) return true;
         if (!(o instanceof Entity)) return false;
         Entity<?> entity = (Entity<?>) o;
-        return getId().equals(entity.getId());
+        return Objects.equals(id, entity.id);
     }
 
     @Override

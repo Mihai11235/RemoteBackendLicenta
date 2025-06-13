@@ -1,131 +1,114 @@
 package org.example.persistence;
-
 import org.example.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Component
 public class UserRepository implements IUserRepository{
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
+
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
+        User user = new User();
+        user.setId(rs.getLong("id"));
+        user.setUsername(rs.getString("username"));
+        user.setPassword(rs.getString("password"));
+        user.setName(rs.getString("name"));
+        return user;
+    };
 
     @Autowired
     public UserRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
+
     @Override
     public Optional<User> findOne(Long id) {
-        User user = null;
-        try(Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE id = ?");
-        ){
-            preparedStatement.setLong(1, id);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()){
-                String username = resultSet.getString("username");
-                String password = resultSet.getString("password");
-                String name = resultSet.getString("name");
-
-                user = new User(username, password, name); user.setId(id);
-            }
+        String sql = "SELECT * FROM users WHERE id = ?";
+        try {
+            // queryForObject is used when you expect exactly one result
+            User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
+            return Optional.ofNullable(user);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
         }
-        catch (SQLException e){
-            throw new RepositoryException("UserRepository: " + e);
+        catch (DataAccessException e) {
+            throw new RepositoryException("UserRepository: Failed to find user by id", e);
         }
-        return Optional.ofNullable(user);
     }
 
 
     @Override
     public Optional<User> findOneByUsername(String username) {
-        User user = null;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE username = ?");
-        ) {
-            preparedStatement.setString(1, username);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-
-                Long id = resultSet.getLong("id");
-                String password = resultSet.getString("password");
-                String name = resultSet.getString("name");
-
-                user = new User(username, password, name); user.setId(id);
-            }
-        } catch (SQLException e) {
-            throw new RepositoryException("UserRepository: " + e);
+        String sql = "SELECT * FROM users WHERE username = ?";
+        try {
+            User user = jdbcTemplate.queryForObject(sql, userRowMapper, username);
+            return Optional.ofNullable(user);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
         }
-        return Optional.ofNullable(user);
+        catch (DataAccessException e) {
+            throw new RepositoryException("UserRepository: Failed to find user by username", e);
+        }
     }
 
     @Override
     public Iterable<User> getAll() {
-        List<User> users=new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users");
-        ) {
-            try(ResultSet resultSet=preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-
-                    Long id = resultSet.getLong("id");
-                    String username = resultSet.getString("username");
-                    String password = resultSet.getString("password");
-                    String name = resultSet.getString("name");
-
-                    User user = new User(username, password, name); user.setId(id);
-                    users.add(user);
-                }                                     }
-
-        } catch (SQLException e) {
-            System.err.println("Error DB "+e);
-            throw new RepositoryException("UserRepository: " + e);
+        try {
+            String sql = "SELECT * FROM users";
+            return jdbcTemplate.query(sql, userRowMapper);
+        } catch (DataAccessException e) {
+            throw new RepositoryException("UserRepository: Failed to get all users", e);
         }
-        return users;
     }
 
     @Override
     public Optional<User> add(User entity) {
-        try(Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO users (username, password, name) VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
-        ){
-            preparedStatement.setString(1, entity.getUsername());
-            preparedStatement.setString(2, entity.getPassword());
-            preparedStatement.setString(3, entity.getName());
-            int affectedRows = preparedStatement.executeUpdate();
-            ResultSet keys = preparedStatement.getGeneratedKeys();
-            if (keys.next()) {
-                entity.setId(keys.getLong(1));
+        try {
+            String sql = "INSERT INTO users (username, password, name) VALUES (?,?,?)";
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+
+            jdbcTemplate.update(connection -> {
+                PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                preparedStatement.setString(1, entity.getUsername());
+                preparedStatement.setString(2, entity.getPassword());
+                preparedStatement.setString(3, entity.getName());
+                return preparedStatement;
+            }, keyHolder);
+
+            if (keyHolder.getKey() != null) {
+                entity.setId(keyHolder.getKey().longValue());
+                return Optional.of(entity);
+            } else {
+                return Optional.empty();
             }
-            return affectedRows == 0 ? Optional.empty() : Optional.of(entity);
-        }
-        catch (SQLException e){
-            throw new RepositoryException("UserRepository: " + e);
+        } catch (DataAccessException e) {
+            throw new RepositoryException("UserRepository: Failed to add user", e);
         }
     }
 
     @Override
     public Optional<User> delete(Long aLong) {
-        Optional<User> entityOpt = findOne(aLong); // Assuming this method retrieves by ID
+        try {
+            Optional<User> entityOpt = findOne(aLong);
 
-        if (entityOpt.isEmpty()) {
-            return Optional.empty();
-        }
+            if (entityOpt.isEmpty()) {
+                return Optional.empty();
+            }
 
-        try(Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM users where id=?");
-        ){
-            preparedStatement.setLong(1, aLong);
-            int affectedRows = preparedStatement.executeUpdate();
+            int affectedRows = jdbcTemplate.update("DELETE FROM users where id=?", aLong);
 
-            return affectedRows == 0 ? Optional.empty() : entityOpt;
-        }
-        catch (SQLException e){
-            throw new RepositoryException("UserRepository: " + e);
+            return affectedRows > 0 ? entityOpt : Optional.empty();
+        } catch (DataAccessException e) {
+            throw new RepositoryException("UserRepository: Failed to delete user", e);
         }
     }
 

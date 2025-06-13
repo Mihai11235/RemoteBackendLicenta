@@ -38,7 +38,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 request.setAttribute("username", username);
                 request.setAttribute("user_id", jwtService.extractUserId(token));
             } else {
-                Map<String, String> error = Map.of("error", "Invalid or expired token");
+                Map<String, String> error = Map.of("error", "Invalid or expired token!\n");
 
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");

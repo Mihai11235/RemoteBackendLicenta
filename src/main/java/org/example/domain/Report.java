@@ -13,13 +13,21 @@ public class Report extends Entity<Long>{
 
     public Report(){}
 
-    public Report(Long user_id, Double start_lat, Double start_lng, Double end_lat, Double end_lng, Long created_at, List<Warning> warnings) {
+    public Report(Long user_id, Double start_lat, Double start_lng, Double end_lat, Double end_lng, Long created_at) {
         this.user_id = user_id;
         this.start_lat = start_lat;
         this.start_lng = start_lng;
         this.end_lat = end_lat;
         this.end_lng = end_lng;
         this.created_at = created_at;
+    }
+
+    public Report(Long user_id, Double start_lat, Double start_lng, Double end_lat, Double end_lng) {
+        this.user_id = user_id;
+        this.start_lat = start_lat;
+        this.start_lng = start_lng;
+        this.end_lat = end_lat;
+        this.end_lng = end_lng;
     }
 
     public Long getUser_id() {

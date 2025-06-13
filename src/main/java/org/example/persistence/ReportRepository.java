@@ -1,10 +1,12 @@
 package org.example.persistence;
-
 import org.example.domain.Report;
 import org.example.domain.Warning;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
@@ -13,10 +15,12 @@ import java.util.*;
 public class ReportRepository implements IReportRepository {
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public ReportRepository(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
@@ -29,43 +33,50 @@ public class ReportRepository implements IReportRepository {
         return null;
     }
 
+    @Override
     public Optional<Report> add(Report entity) {
-        String sqlWithTimestamp = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng, created_at) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?,?,?)";
-        String sqlWithoutTimestamp = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng) OUTPUT inserted.id, inserted.created_at VALUES (?,?,?,?,?)";
-        String sql = entity.getCreated_at() != null ? sqlWithTimestamp : sqlWithoutTimestamp;
+        try {
+            String sql = "INSERT INTO reports (user_id, start_lat, start_lng, end_lat, end_lng, created_at) VALUES (?,?,?,?,?,?)";
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
 
-//            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setLong(1, entity.getUser_id());
+                ps.setDouble(2, entity.getStart_lat());
+                ps.setDouble(3, entity.getStart_lng());
+                ps.setDouble(4, entity.getEnd_lat());
+                ps.setDouble(5, entity.getEnd_lng());
+                ps.setLong(6, entity.getCreated_at());
+                return ps;
+            }, keyHolder);
 
-            preparedStatement.setLong(1, entity.getUser_id());
-            preparedStatement.setDouble(2, entity.getStart_lat());
-            preparedStatement.setDouble(3, entity.getStart_lng());
-            preparedStatement.setDouble(4, entity.getEnd_lat());
-            preparedStatement.setDouble(5, entity.getEnd_lng());
-            if (entity.getCreated_at() != null) {
-                preparedStatement.setLong(6, entity.getCreated_at());
-            }
-
-            ResultSet rs = preparedStatement.executeQuery();
-            if (rs.next()) {
-                entity.setId(rs.getLong("id"));
-                entity.setCreated_at(rs.getLong("created_at"));
+            if (keyHolder.getKey() != null) {
+                entity.setId(keyHolder.getKey().longValue());
                 return Optional.of(entity);
             } else {
                 return Optional.empty();
             }
-
-        } catch (SQLException e) {
-            throw new RepositoryException("ReportRepository: " + e);
+        } catch (DataAccessException e) {
+            throw new RepositoryException("ReportRepository: Failed to add report", e);
         }
     }
 
-
     @Override
     public Optional<Report> delete(Long aLong) {
-        return Optional.empty();
+        try {
+            Optional<Report> entityOpt = findOne(aLong);
+
+            if (entityOpt.isEmpty()) {
+                return Optional.empty();
+            }
+
+            int affectedRows = jdbcTemplate.update("DELETE FROM reports WHERE id = ?", aLong);
+
+            return affectedRows > 0 ? entityOpt : Optional.empty();
+        } catch (DataAccessException e) {
+            throw new RepositoryException("ReportRepository: Failed to delete report", e);
+        }
     }
 
     @Override
@@ -77,8 +88,8 @@ public class ReportRepository implements IReportRepository {
     @Override
     public List<Report> getAllOfUser(Long userId) {
         String sql = "SELECT \n" +
-                "    R.id AS report_id, R.start_lat, R.start_lng, R.end_lat, R.end_lng, R.created_at, R.user_id,\n" +
-                "    W.id AS warning_id, W.text, W.lat, W.lng, W.created_at, W.report_id\n" +
+                "    R.id AS report_id, R.start_lat, R.start_lng, R.end_lat, R.end_lng, R.created_at as r_created_at, R.user_id,\n" +
+                "    W.id AS warning_id, W.text, W.lat, W.lng, W.created_at as w_created_at, W.report_id\n" +
                 "FROM reports R\n" +
                 "LEFT JOIN warnings W ON R.id = W.report_id\n" +
                 "WHERE R.user_id = ?\n" +
@@ -107,7 +118,7 @@ public class ReportRepository implements IReportRepository {
                     report.setStart_lng(rs.getDouble("start_lng"));
                     report.setEnd_lat(rs.getDouble("end_lat"));
                     report.setEnd_lng(rs.getDouble("end_lng"));
-                    report.setCreated_at(rs.getLong("created_at"));
+                    report.setCreated_at(rs.getLong("r_created_at"));
                     report.setWarnings(new ArrayList<>()); // initialize warning list
                     reportMap.put(reportId, report);
                 }
@@ -120,14 +131,14 @@ public class ReportRepository implements IReportRepository {
                     warning.setText(rs.getString("text"));
                     warning.setLat(rs.getDouble("lat"));
                     warning.setLng(rs.getDouble("lng"));
-                    warning.setCreated_at(rs.getLong("created_at"));
+                    warning.setCreated_at(rs.getLong("w_created_at"));
                     warning.setReport_id(reportId);
                     report.getWarnings().add(warning);
                 }
             }
         } catch (SQLException e) {
             System.err.println("Error DB "+e);
-            throw new RepositoryException("WarningRepository: " + e);
+            throw new RepositoryException("ReportRepository: Failed to get all reports of user" + e);
         }
         return new ArrayList<>(reportMap.values());
     }

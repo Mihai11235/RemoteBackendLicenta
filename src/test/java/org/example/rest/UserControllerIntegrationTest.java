@@ -61,22 +61,6 @@ public class UserControllerIntegrationTest {
         jwt = jwtService.generateToken(user);
     }
 
-    @Test
-    void testGetById_UserExists() throws Exception {
-        mockMvc.perform(get("/users/" + user.getId())
-                        .header("Authorization", "Bearer " + jwt)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username", is("testuser")));
-    }
-
-    @Test
-    void testGetById_UserNotFound() throws Exception {
-        mockMvc.perform(get("/users/" + user.getId() + 1)
-                        .header("Authorization", "Bearer " + jwt)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
-    }
 
     @Test
     void testCreateUser_Success() throws Exception {
@@ -102,7 +86,7 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Username already exists"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Username already exists!")));
     }
 
     @Test
@@ -112,8 +96,11 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(post("/users/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAttempt)))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("\"org.example.domain.User.getName()\" is null")));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Name must be capitalized and must contain only letters!")))
+                .andExpect(jsonPath("$.error", Matchers.containsString("Username must be alphanumeric and start with a letter!")))
+                .andExpect(jsonPath("$.error", Matchers.containsString("Password cannot be null!")));
     }
 
     @Test
@@ -148,7 +135,8 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Login failed! Incorrect username or password"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Login failed! Incorrect username or password!")));
+
     }
 
     @Test
@@ -161,7 +149,7 @@ public class UserControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Login failed! Incorrect username or password"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Login failed! Incorrect username or password!")));
     }
 
     @Test
@@ -173,7 +161,7 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Missing username or password"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Missing username or password!")));
     }
 
     @Test
@@ -200,7 +188,7 @@ public class UserControllerIntegrationTest {
     void testGetCurrentUser_Unauthorized_WhenNoJwtAttribute() throws Exception {
         mockMvc.perform(get("/users/me"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Missing or invalid token"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Missing or invalid token!")));
     }
 
     @Test
@@ -208,6 +196,6 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(get("/users/me")
                         .header("Authorization", "Bearer " + jwt + "invalid string"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Invalid or expired token"));
+                .andExpect(jsonPath("$.error", Matchers.containsString("Invalid or expired token!")));
     }
 }

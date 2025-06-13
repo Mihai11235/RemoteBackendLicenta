@@ -22,7 +22,7 @@ public class WarningValidator implements Validator<Warning> {
     public void validate(Warning entity) throws ValidationException {
         String errors = "";
         if(!validLat(entity.getLat()) || !validLng(entity.getLng())) {
-            errors += "Lat and Lng are not valid!\n";
+            errors += "Invalid lat/lng coordinates!\n";
         }
         if(entity.getText() == null || entity.getText().isEmpty()) {
             errors += "Text cannot be empty!\n";
