@@ -1,5 +1,6 @@
 package org.example.domain.validators;
 
+import org.example.business.exception.ValidationException;
 import org.example.domain.User;
 
 public class UserValidator implements Validator<User> {

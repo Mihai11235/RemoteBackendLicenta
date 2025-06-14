@@ -1,5 +1,6 @@
 package org.example.domain.validators;
 
+import org.example.business.exception.ValidationException;
 import org.example.domain.Report;
 
 public class ReportValidator implements Validator<Report> {
@@ -20,13 +21,15 @@ public class ReportValidator implements Validator<Report> {
 
     @Override
     public void validate(Report entity) throws ValidationException {
+        if (entity == null) {
+            throw new ValidationException("Report cannot be null.");
+        }
         String errors = "";
 
-        if(entity == null || entity.getStart_lat() == null || entity.getStart_lng() == null || entity.getEnd_lat() == null || entity.getEnd_lng() == null){
+        if(entity.getStart_lat() == null || entity.getStart_lng() == null || entity.getEnd_lat() == null || entity.getEnd_lng() == null){
             errors += "Missing report fields.\n";
         }
-
-        if(!validLat(entity.getStart_lat()) || !validLat(entity.getEnd_lat())
+        else if(!validLat(entity.getStart_lat()) || !validLat(entity.getEnd_lat())
         || !validLng(entity.getStart_lng()) || !validLng(entity.getEnd_lng())) {
             errors += "Invalid lat/lng coordinates!\n";
         }

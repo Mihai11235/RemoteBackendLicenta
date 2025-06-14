@@ -1,141 +1,79 @@
-package start.rest;
+package org.example.rest;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.example.business.UserService;
+import org.example.business.exception.UserAlreadyExistsException;
 import org.example.domain.User;
-import org.example.persistence.IUserRepository;
-import org.example.rest.UserController;
-import org.example.utils.JwtService;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.crypto.bcrypt.BCrypt;
-import org.springframework.test.web.servlet.MockMvc;
-import java.util.Optional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
-//@ContextConfiguration(classes = StartRestServices.class)
-@WebMvcTest(UserController.class)
-//@ComponentScan(basePackages = "org.example")
-//@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
+public class UserControllerUnitTest {
 
-class UserControllerUnitTest {
+    @Mock
+    private UserService mockUserService;
+    @Mock
+    private HttpServletRequest mockRequest;
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private IUserRepository userRepository;
-
-    @MockBean
-    private JwtService jwtService;
-
-    private String jwt;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
+    @InjectMocks
+    private UserController userController;
 
     @Test
-    void testCreateUser_Success() throws Exception {
-        User user = new User("testuserok", "testpass", "Test UserOk");
+    void create_shouldReturnCreated_whenServiceSucceeds() {
+        User user = new User("test", "pass", "Test");
+        when(mockUserService.create(any(User.class))).thenReturn(user);
 
-        User created = new User();
-        created.setId(1L);
-        created.setUsername("testuserok");
+        ResponseEntity<?> response = userController.create(user);
 
-        Mockito.when(userRepository.add(any(User.class))).thenReturn(Optional.of(created));
-
-        mockMvc.perform(post("/users/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value("testuserok"));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isEqualTo(user);
     }
 
     @Test
-    void testCreateUser_Failure_Empty() throws Exception {
-        User user = new User("testuserbad", "testpass", "Test UserBad");
+    void create_shouldThrowException_whenUsernameExists() {
+        User user = new User("test", "pass", "Test");
+        when(mockUserService.create(any(User.class)))
+                .thenThrow(new UserAlreadyExistsException("Username already exists!"));
 
-        Mockito.when(userRepository.add(any(User.class))).thenReturn(Optional.empty());
-
-        mockMvc.perform(post("/users/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("User could not be created!")));
+        assertThrows(UserAlreadyExistsException.class, () -> {
+            userController.create(user);
+        });
     }
 
     @Test
-    void testCreateUser_Failure_Empty_Attributes() throws Exception {
-        User user = new User("", "", "Test UserBad");
+    void login_shouldReturnOkWithToken() {
+        User user = new User("test", "pass", "Test");
+        String fakeToken = "abc.123.def";
+        when(mockUserService.login(any(User.class))).thenReturn(fakeToken);
 
-        Mockito.when(userRepository.add(any(User.class))).thenReturn(Optional.of(user));
+        ResponseEntity<?> response = userController.login(user);
 
-        mockMvc.perform(post("/users/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Username must be alphanumeric and start with a letter!")));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((Map<String, String>) response.getBody()).containsEntry("token", fakeToken);
     }
 
     @Test
-    void testCreateUser_Failure_Existing() throws Exception {
-        User user = new User("existing", "testpass", "Test UserBad");
+    void getCurrentUser_shouldReturnOkWithUser() {
+        User user = new User("test", null, "Test");
+        when(mockRequest.getAttribute("username")).thenReturn("test");
+        when(mockUserService.getCurrentUser(anyString())).thenReturn(user);
 
-        Mockito.when(userRepository.add(any(User.class))).thenReturn(Optional.of(user));
-        Mockito.when(userRepository.findOneByUsername(any(String.class))).thenReturn(Optional.of(user));
+        ResponseEntity<?> response = userController.getCurrentUser(mockRequest);
 
-        mockMvc.perform(post("/users/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Username already exists!")));
-    }
-
-
-    @Test
-    void testLogin_Success() throws Exception {
-        String hashedPassword = BCrypt.hashpw("testpass", BCrypt.gensalt());
-        User user = new User("testuser", hashedPassword, "Test Name");
-
-        Mockito.when(userRepository.findOneByUsername(eq("testuser"))).thenReturn(Optional.of(user));
-
-        User loginAttempt = new User("testuser", "testpass", "Test Name");
-
-        mockMvc.perform(post("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginAttempt)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
-    }
-
-    @Test
-    void testLogin_Failure_NotFound() throws Exception {
-        User loginAttempt = new User("testuser", "testpass", "Test Name");
-        Mockito.when(userRepository.findOneByUsername(eq("testuser"))).thenReturn(Optional.empty());
-
-
-        mockMvc.perform(post("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginAttempt)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Login failed! Incorrect username or password!")));
-    }
-
-    @Test
-    void testLogin_Failure_Empty() throws Exception {
-        User loginAttempt = new User("", "", "Test Name");
-
-        mockMvc.perform(post("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginAttempt)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Missing username or password")));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(user);
     }
 }

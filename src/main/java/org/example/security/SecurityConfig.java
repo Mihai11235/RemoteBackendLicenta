@@ -1,6 +1,6 @@
 package org.example.security;
-
 import org.example.utils.JwtService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -8,6 +8,7 @@ import org.springframework.core.Ordered;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.util.List;
 
@@ -19,8 +20,6 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of("http://localhost:3000"));
-//        config.setAllowedOrigins(List.of("http://192.168.1.13:3000"));
-//        config.setAllowedOrigins(List.of("http://localhost:3000"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
@@ -32,8 +31,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtFilter jwtFilter(JwtService jwtService) {
-        return new JwtFilter(jwtService);
+    public JwtFilter jwtFilter(JwtService jwtService,
+                               @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+        return new JwtFilter(jwtService, resolver);
     }
 
     @Bean

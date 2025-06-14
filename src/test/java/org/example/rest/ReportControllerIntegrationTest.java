@@ -89,8 +89,8 @@ public class ReportControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(report)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Invalid lat/lng coordinates!")))
-                .andExpect(jsonPath("$.error", Matchers.containsString("Text cannot be empty!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Invalid lat/lng coordinates!")))
+                .andExpect(jsonPath("$.message", Matchers.containsString("Text cannot be empty!")));
 
 
         // Check the database to prove the rollback worked. The parent Report should not have been saved.
@@ -112,7 +112,7 @@ public class ReportControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(report)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Invalid lat/lng coordinates!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Invalid lat/lng coordinates!")));
 
         // Check the database to prove the rollback worked. The parent Report should not have been saved.
         List<Report> reportsInDb = reportRepository.getAllOfUser(user.getId());
@@ -133,7 +133,7 @@ public class ReportControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(report)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Warnings cannot be null!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Warnings cannot be null!")));
 
         // Check the database to prove the rollback worked. The parent Report should not have been saved.
         List<Report> reportsInDb = reportRepository.getAllOfUser(user.getId());
@@ -168,7 +168,7 @@ public class ReportControllerIntegrationTest {
     void testCreate_Unauthorized_WhenNoJwtAttribute() throws Exception {
         mockMvc.perform(post("/reports/create"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Missing or invalid token!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Missing or invalid token!")));
     }
 
     @Test
@@ -176,7 +176,7 @@ public class ReportControllerIntegrationTest {
         mockMvc.perform(post("/reports/create")
                         .header("Authorization", "Bearer " + jwt + "invalid string"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Invalid or expired token")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Invalid or expired token")));
     }
 
 
@@ -211,7 +211,7 @@ public class ReportControllerIntegrationTest {
     void testGetAll_Unauthorized_WhenNoJwtAttribute() throws Exception {
         mockMvc.perform(post("/reports/getAll"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Missing or invalid token!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Missing or invalid token!")));
     }
 
 
@@ -220,7 +220,7 @@ public class ReportControllerIntegrationTest {
         mockMvc.perform(post("/reports/getAll")
                         .header("Authorization", "Bearer " + jwt + "invalid string"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Invalid or expired token")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Invalid or expired token")));
 
     }
 }

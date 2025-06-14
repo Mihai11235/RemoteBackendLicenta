@@ -86,7 +86,7 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Username already exists!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Username already exists!")));
     }
 
     @Test
@@ -98,9 +98,9 @@ public class UserControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(createAttempt)))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Name must be capitalized and must contain only letters!")))
-                .andExpect(jsonPath("$.error", Matchers.containsString("Username must be alphanumeric and start with a letter!")))
-                .andExpect(jsonPath("$.error", Matchers.containsString("Password cannot be null!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Name must be capitalized and must contain only letters!")))
+                .andExpect(jsonPath("$.message", Matchers.containsString("Username must be alphanumeric and start with a letter!")))
+                .andExpect(jsonPath("$.message", Matchers.containsString("Password cannot be null!")));
     }
 
     @Test
@@ -111,8 +111,8 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAttempt)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Name must be capitalized and must contain only letters!")))
-                .andExpect(jsonPath("$.error", Matchers.containsString("Username must be alphanumeric and start with a letter!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Name must be capitalized and must contain only letters!")))
+                .andExpect(jsonPath("$.message", Matchers.containsString("Username must be alphanumeric and start with a letter!")));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Login failed! Incorrect username or password!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Login failed! Incorrect username or password!")));
 
     }
 
@@ -149,7 +149,7 @@ public class UserControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Login failed! Incorrect username or password!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Login failed! Incorrect username or password!")));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class UserControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginAttempt)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Missing username or password!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Missing username or password!")));
     }
 
     @Test
@@ -174,21 +174,12 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.username").value("testuser"));
     }
 
-//    @Test
-//    void testGetCurrentUser_Failure() throws Exception {
-////        String jwt = jwtService.generateToken(user);
-//
-//        mockMvc.perform(get("/users/me"))
-//                .andExpect(status().isUnauthorized())
-//                .andExpect(jsonPath("$.error").value("Missing or invalid token"));
-//    }
-//
 
     @Test
     void testGetCurrentUser_Unauthorized_WhenNoJwtAttribute() throws Exception {
         mockMvc.perform(get("/users/me"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Missing or invalid token!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Missing or invalid token!")));
     }
 
     @Test
@@ -196,6 +187,6 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(get("/users/me")
                         .header("Authorization", "Bearer " + jwt + "invalid string"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", Matchers.containsString("Invalid or expired token!")));
+                .andExpect(jsonPath("$.message", Matchers.containsString("Invalid or expired token!")));
     }
 }

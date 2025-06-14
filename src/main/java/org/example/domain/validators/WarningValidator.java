@@ -1,5 +1,6 @@
 package org.example.domain.validators;
 
+import org.example.business.exception.ValidationException;
 import org.example.domain.Warning;
 
 public class WarningValidator implements Validator<Warning> {

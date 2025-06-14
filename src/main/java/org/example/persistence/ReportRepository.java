@@ -4,6 +4,7 @@ import org.example.domain.Warning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
@@ -85,6 +86,64 @@ public class ReportRepository implements IReportRepository {
     }
 
 
+//    @Override
+//    public List<Report> getAllOfUser(Long userId) {
+//        String sql = "SELECT \n" +
+//                "    R.id AS report_id, R.start_lat, R.start_lng, R.end_lat, R.end_lng, R.created_at as r_created_at, R.user_id,\n" +
+//                "    W.id AS warning_id, W.text, W.lat, W.lng, W.created_at as w_created_at, W.report_id\n" +
+//                "FROM reports R\n" +
+//                "LEFT JOIN warnings W ON R.id = W.report_id\n" +
+//                "WHERE R.user_id = ?\n" +
+//                "ORDER BY R.created_at DESC";
+//
+//        Map<Long, Report> reportMap = new LinkedHashMap<>();
+//
+//        try (Connection connection = dataSource.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+//        ) {
+//
+//            preparedStatement.setLong(1, userId);
+//
+//            ResultSet rs = preparedStatement.executeQuery();
+//
+//            while (rs.next()) {
+//                long reportId = rs.getLong("report_id");
+//
+//                // If we haven’t seen this report yet, create and store it
+//                Report report = reportMap.get(reportId);
+//                if (report == null) {
+//                    report = new Report();
+//                    report.setId(reportId);
+//                    report.setUser_id(rs.getLong("user_id"));
+//                    report.setStart_lat(rs.getDouble("start_lat"));
+//                    report.setStart_lng(rs.getDouble("start_lng"));
+//                    report.setEnd_lat(rs.getDouble("end_lat"));
+//                    report.setEnd_lng(rs.getDouble("end_lng"));
+//                    report.setCreated_at(rs.getLong("r_created_at"));
+//                    report.setWarnings(new ArrayList<>()); // initialize warning list
+//                    reportMap.put(reportId, report);
+//                }
+//
+//                // If there's a warning, add it
+//                long warningId = rs.getLong("warning_id");
+//                if (!rs.wasNull()) {
+//                    Warning warning = new Warning();
+//                    warning.setId(warningId);
+//                    warning.setText(rs.getString("text"));
+//                    warning.setLat(rs.getDouble("lat"));
+//                    warning.setLng(rs.getDouble("lng"));
+//                    warning.setCreated_at(rs.getLong("w_created_at"));
+//                    warning.setReport_id(reportId);
+//                    report.getWarnings().add(warning);
+//                }
+//            }
+//        } catch (SQLException e) {
+//            System.err.println("Error DB "+e);
+//            throw new RepositoryException("ReportRepository: Failed to get all reports of user" + e);
+//        }
+//        return new ArrayList<>(reportMap.values());
+//    }
+
     @Override
     public List<Report> getAllOfUser(Long userId) {
         String sql = "SELECT \n" +
@@ -95,51 +154,44 @@ public class ReportRepository implements IReportRepository {
                 "WHERE R.user_id = ?\n" +
                 "ORDER BY R.created_at DESC";
 
-        Map<Long, Report> reportMap = new LinkedHashMap<>();
+        try {
+            return jdbcTemplate.query(sql, new ResultSetExtractor<List<Report>>() {
+                @Override
+                public List<Report> extractData(ResultSet rs) throws SQLException, DataAccessException {
+                    Map<Long, Report> reportMap = new LinkedHashMap<>();
+                    while (rs.next()) {
+                        long reportId = rs.getLong("report_id");
+                        Report report = reportMap.get(reportId);
+                        if (report == null) {
+                            report = new Report();
+                            report.setId(reportId);
+                            report.setUser_id(rs.getLong("user_id"));
+                            report.setStart_lat(rs.getDouble("start_lat"));
+                            report.setStart_lng(rs.getDouble("start_lng"));
+                            report.setEnd_lat(rs.getDouble("end_lat"));
+                            report.setEnd_lng(rs.getDouble("end_lng"));
+                            report.setCreated_at(rs.getLong("r_created_at"));
+                            report.setWarnings(new ArrayList<>()); // initialize warning list
+                            reportMap.put(reportId, report);
+                        }
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-
-            preparedStatement.setLong(1, userId);
-
-            ResultSet rs = preparedStatement.executeQuery();
-
-            while (rs.next()) {
-                long reportId = rs.getLong("report_id");
-
-                // If we haven’t seen this report yet, create and store it
-                Report report = reportMap.get(reportId);
-                if (report == null) {
-                    report = new Report();
-                    report.setId(reportId);
-                    report.setUser_id(rs.getLong("user_id"));
-                    report.setStart_lat(rs.getDouble("start_lat"));
-                    report.setStart_lng(rs.getDouble("start_lng"));
-                    report.setEnd_lat(rs.getDouble("end_lat"));
-                    report.setEnd_lng(rs.getDouble("end_lng"));
-                    report.setCreated_at(rs.getLong("r_created_at"));
-                    report.setWarnings(new ArrayList<>()); // initialize warning list
-                    reportMap.put(reportId, report);
+                        long warningId = rs.getLong("warning_id");
+                        if (!rs.wasNull()) {
+                            Warning warning = new Warning();
+                            warning.setId(warningId);
+                            warning.setText(rs.getString("text"));
+                            warning.setLat(rs.getDouble("lat"));
+                            warning.setLng(rs.getDouble("lng"));
+                            warning.setCreated_at(rs.getLong("w_created_at"));
+                            warning.setReport_id(reportId);
+                            report.getWarnings().add(warning);
+                        }
+                    }
+                    return new ArrayList<>(reportMap.values());
                 }
-
-                // If there's a warning, add it
-                long warningId = rs.getLong("warning_id");
-                if (!rs.wasNull()) {
-                    Warning warning = new Warning();
-                    warning.setId(warningId);
-                    warning.setText(rs.getString("text"));
-                    warning.setLat(rs.getDouble("lat"));
-                    warning.setLng(rs.getDouble("lng"));
-                    warning.setCreated_at(rs.getLong("w_created_at"));
-                    warning.setReport_id(reportId);
-                    report.getWarnings().add(warning);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error DB "+e);
-            throw new RepositoryException("ReportRepository: Failed to get all reports of user" + e);
+            }, userId);
+        } catch (DataAccessException e) {
+            throw new RepositoryException("ReportRepository: Failed to get all reports of user", e);
         }
-        return new ArrayList<>(reportMap.values());
     }
 }
