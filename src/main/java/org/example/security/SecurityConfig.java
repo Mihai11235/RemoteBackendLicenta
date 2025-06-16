@@ -12,9 +12,19 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.util.List;
 
+/**
+ * Security configuration class that sets up CORS and JWT filters.
+ * CORS is configured to allow requests from a specific origin.
+ * JWT filter is registered to handle authentication and authorization.
+ */
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * Configures CORS.
+     *
+     * @return FilterRegistrationBean for CORS filter
+     */
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
@@ -30,12 +40,25 @@ public class SecurityConfig {
         return bean;
     }
 
+    /**
+     * Configures the JWT filter.
+     *
+     * @param jwtService The JWT service used for authentication
+     * @param resolver The exception resolver to handle errors
+     * @return JwtFilter instance
+     */
     @Bean
     public JwtFilter jwtFilter(JwtService jwtService,
                                @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
         return new JwtFilter(jwtService, resolver);
     }
 
+    /**
+     * Registers the JWT filter to intercept all requests.
+     *
+     * @param jwtFilter The JWT filter to be registered
+     * @return FilterRegistrationBean for the JWT filter
+     */
     @Bean
     public FilterRegistrationBean<JwtFilter> jwtFilterRegistration(JwtFilter jwtFilter) {
         FilterRegistrationBean<JwtFilter> registrationBean = new FilterRegistrationBean<>();

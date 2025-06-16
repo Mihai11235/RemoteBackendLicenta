@@ -1,5 +1,10 @@
 package org.example.persistence;
 
+/**
+ * Exception class for repository-related errors.
+ * This class extends RuntimeException and is used to indicate issues
+ * that occur during data access operations in the repository layer.
+ */
 public class RepositoryException extends RuntimeException {
     public RepositoryException() {
     }

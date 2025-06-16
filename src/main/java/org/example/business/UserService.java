@@ -1,5 +1,4 @@
 package org.example.business;
-
 import org.example.business.exception.*;
 import org.example.domain.User;
 import org.example.domain.validators.UserValidator;
@@ -11,13 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service layer for user-related operations such as registration, login, and retrieval.
+ * Handles validation, hashing, and interaction with the user repository.
+ */
 @Service
 public class UserService {
-    // This class can contain business logic related to users, such as
-    // user authentication, authorization, and other user-related operations.
-    // It can also interact with the IUserRepository to perform CRUD operations
-    // on User entities, while applying any necessary business rules or validations.
-
     private static final Validator<User> userValidator = UserValidator.getInstance();
 
     @Autowired
@@ -26,6 +24,15 @@ public class UserService {
     @Autowired
     private JwtService jwtService;
 
+    /**
+     * Registers a new user after validation and password hashing.
+     *
+     * @param user The user to be created.
+     * @return The created user with password set to null.
+     * @throws UserAlreadyExistsException If the username is already taken.
+     * @throws ValidationException If user input is invalid.
+     * @throws DataAccessException If user creation fails due to repository issues.
+     */
     public User create(User user) {
         userValidator.validate(user);
 
@@ -48,6 +55,15 @@ public class UserService {
         }
     }
 
+    /**
+     * Authenticates a user and returns a JWT if successful.
+     *
+     * @param user The user credentials for login.
+     * @return A JWT token on successful authentication.
+     * @throws ValidationException If credentials are missing.
+     * @throws InvalidCredentialsException If login fails.
+     * @throws DataAccessException If repository access fails.
+     */
     public String login(User user) {
         if (user.getPassword() == null || user.getUsername() == null || user.getPassword().isEmpty()) {
             throw new ValidationException("UserService: Missing username or password!\n");
@@ -68,6 +84,15 @@ public class UserService {
         }
     }
 
+    /**
+     * Retrieves the currently authenticated user by username.
+     *
+     * @param username The username extracted from the token.
+     * @return The corresponding user with password set to null.
+     * @throws InvalidCredentialsException If username is null.
+     * @throws ResourceNotFoundException If user does not exist.
+     * @throws DataAccessException If repository access fails.
+     */
     public User getCurrentUser(String username) {
         if (username == null) {
             throw new InvalidCredentialsException("UserService: Missing or invalid token!!\n");

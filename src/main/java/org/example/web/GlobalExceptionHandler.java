@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+/**
+ * Global exception handler for the application.
+ * This class handles various exceptions and returns appropriate HTTP responses.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

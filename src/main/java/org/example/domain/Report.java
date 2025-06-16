@@ -1,18 +1,27 @@
 package org.example.domain;
-
 import java.util.List;
 
+/**
+ * Represents a driving session report containing GPS coordinates,
+ * a creation timestamp, and associated lane departure warnings.
+ */
 public class Report extends Entity<Long>{
-    Long user_id;
-    Double start_lat;
-    Double start_lng;
-    Double end_lat;
-    Double end_lng;
-    Long created_at;
-    List<Warning> warnings;
+    Long user_id; // ID of the user who submitted the report
+    Double start_lat; // Start latitude of the journey
+    Double start_lng; // Start longitude of the journey
+    Double end_lat; // End latitude of the journey
+    Double end_lng; // End longitude of the journey
+    Long created_at; // Timestamp when the report was created (in ms)
+    List<Warning> warnings;// List of lane departure warnings during the journey
 
+    /**
+     * Default constructor.
+     */
     public Report(){}
 
+    /**
+     * Creates a Report with all fields including timestamp.
+     */
     public Report(Long user_id, Double start_lat, Double start_lng, Double end_lat, Double end_lng, Long created_at) {
         this.user_id = user_id;
         this.start_lat = start_lat;
@@ -22,6 +31,9 @@ public class Report extends Entity<Long>{
         this.created_at = created_at;
     }
 
+    /**
+     * Creates a Report without timestamp (e.g., before setting created_at).
+     */
     public Report(Long user_id, Double start_lat, Double start_lng, Double end_lat, Double end_lng) {
         this.user_id = user_id;
         this.start_lat = start_lat;
@@ -29,6 +41,8 @@ public class Report extends Entity<Long>{
         this.end_lat = end_lat;
         this.end_lng = end_lng;
     }
+
+    // Standard getters/setters for each field
 
     public Long getUser_id() {
         return user_id;
@@ -86,10 +100,11 @@ public class Report extends Entity<Long>{
         return warnings;
     }
 
-    public void addWarning(Warning warning) {
-        warnings.add(warning);
-    }
-
+    /**
+     * Returns a string representation of the report.
+     *
+     * @return String containing report data and warnings.
+     */
     @Override
     public String toString() {
         return "Report{" +

@@ -12,6 +12,9 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
+/**
+ * Repository class for managing User entities in the database.
+ */
 @Component
 public class UserRepository implements IUserRepository{
     private final JdbcTemplate jdbcTemplate;

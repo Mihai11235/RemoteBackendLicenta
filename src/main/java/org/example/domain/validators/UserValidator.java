@@ -3,6 +3,10 @@ package org.example.domain.validators;
 import org.example.business.exception.ValidationException;
 import org.example.domain.User;
 
+/**
+ * UserValidator is a singleton class that implements the Validator interface for User entities.
+ * It validates the properties of a User object to ensure they meet specific criteria.
+ */
 public class UserValidator implements Validator<User> {
     private static final UserValidator instance = new UserValidator();
     private UserValidator(){};
@@ -11,6 +15,12 @@ public class UserValidator implements Validator<User> {
         return instance;
     }
 
+    /**
+     * Validates the properties of a User object.
+     *
+     * @param entity the User object to validate
+     * @throws ValidationException if any validation rule is violated
+     */
     @Override
     public void validate(User entity) throws ValidationException {
         String errors = "";

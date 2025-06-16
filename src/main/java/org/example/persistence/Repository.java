@@ -5,65 +5,58 @@ import org.example.domain.Entity;
 import org.example.business.exception.ValidationException;
 import java.util.Optional;
 
-/**
- * CRUD operations repository interface
- * @param <ID> - type E must have an attribute of type ID
- * @param <E> -  type of entities saved in repository
- */
 
+/**
+ * Generic interface for CRUD operations on a repository for a specific type.
+ *
+ * @param <ID> the type of the entity's identifier
+ * @param <E>  the type of the entity, which extends Entity<ID>
+ */
 public interface Repository<ID, E extends Entity<ID>> {
 
     /**
+     * Finds a single entity by its ID.
      *
-     * @param id -the id of the entity to be returned
-     *           id must not be null
-     * @return the entity with the specified id
-     *          or null - if there is no entity with the given id
-     * @throws IllegalArgumentException
-     *                  if id is null.
+     * @param id the ID of the entity to find; must not be null
+     * @return an Optional containing the entity if found, or empty otherwise
+     * @throws RepositoryException if a data access error occurs
      */
     Optional<E> findOne(ID id);
 
     /**
+     * Returns all entities from the repository.
      *
-     * @return all entities
+     * @return an Iterable of all entities
+     * @throws RepositoryException if a data access error occurs
      */
     Iterable<E> getAll();
 
     /**
+     * Adds a new entity to the repository.
      *
-     * @param entity
-     *         entity must be not null
-     * @return null- if the given entity is saved
-     *         otherwise returns the entity (id already exists)
-     * @throws ValidationException
-     *            if the entity is not valid
-     * @throws IllegalArgumentException
-     *             if the given entity is null.     *
+     * @param entity the entity to add
+     * @return an Optional containing the saved entity, or empty if save failed
+     * @throws RepositoryException if a data access error occurs
      */
     Optional<E> add(E entity);
 
 
     /**
-     *  removes the entity with the specified id
-     * @param id
-     *      id must be not null
-     * @return the removed entity or null if there is no entity with the given id
-     * @throws IllegalArgumentException
-     *                   if the given id is null.
+     * Deletes an entity by its ID.
+     *
+     * @param id the ID of the entity to delete
+     * @return an Optional containing the deleted entity, or empty if not found
+     * @throws RepositoryException if a data access error occurs
      */
     Optional<E> delete(ID id);
 
     /**
+     * Updates an existing entity in the repository.
      *
-     * @param entity
-     *          entity must not be null
-     * @return null - if the entity is updated,
-     *                otherwise  returns the entity  - (e.g id does not exist).
-     * @throws IllegalArgumentException
-     *             if the given entity is null.
-     * @throws ValidationException
-     *             if the entity is not valid.
+     * @param entity the entity to update
+     * @return an Optional containing the updated entity, or empty if not found
+     * @throws ValidationException if the entity is invalid
+     * @throws RepositoryException if a data access error occurs
      */
     Optional<E> update(E entity);
 

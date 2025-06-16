@@ -1,7 +1,6 @@
 package org.example.business;
 import org.example.business.exception.DataAccessException;
 import org.example.business.exception.InvalidCredentialsException;
-import org.example.business.exception.ServiceException;
 import org.example.domain.Report;
 import org.example.domain.Warning;
 import org.example.domain.validators.ReportValidator;
@@ -14,6 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
 
+/**
+ * Service class responsible for managing reports and associated warnings.
+ * Provides functionality to create reports and retrieve them by user.
+ */
 @Service
 public class ReportService {
     private Validator<Report> reportValidator = ReportValidator.getInstance();
@@ -24,6 +27,15 @@ public class ReportService {
     @Autowired
     private IWarningRepository warningRepository;
 
+    /**
+     * Creates a new report with its associated warnings after validation.
+     * Performs rollback if any part of the creation fails.
+     *
+     * @param report The report to be saved, including its warnings.
+     * @return The created report.
+     * @throws InvalidCredentialsException If the report has no user ID.
+     * @throws DataAccessException If saving the report or any warning fails.
+     */
     public Report create(Report report) {
         List<Runnable> cleanupActions = new ArrayList<>();
 
@@ -71,6 +83,14 @@ public class ReportService {
         }
     }
 
+    /**
+     * Retrieves all reports associated with a given user.
+     *
+     * @param user_id The ID of the user whose reports are to be retrieved.
+     * @return A list of reports submitted by the user.
+     * @throws InvalidCredentialsException If the user ID is null.
+     * @throws DataAccessException If repository access fails.
+     */
     public List<Report> getAll(Long user_id) {
         try{
             if(user_id == null){

@@ -10,6 +10,9 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
+/**
+ * Repository class for managing Report entities in the database.
+ */
 @Component
 public class WarningRepository implements IWarningRepository{
 
@@ -30,6 +33,14 @@ public class WarningRepository implements IWarningRepository{
         return null;
     }
 
+    /**
+     * Adds a new Warning entity to the database.
+     * If the entity has a non-null created_at timestamp, it will be inserted; otherwise, it is omitted.
+     *
+     * @param entity the Warning to be added
+     * @return an Optional containing the inserted Warning with generated ID, or empty if insert failed
+     * @throws RepositoryException if a database access error occurs
+     */
     @Override
     public Optional<Warning> add(Warning entity) {
         try {
@@ -62,6 +73,13 @@ public class WarningRepository implements IWarningRepository{
         }
     }
 
+    /**
+     * Deletes the Warning with the given ID from the database.
+     *
+     * @param aLong the ID of the Warning to delete
+     * @return an Optional containing the deleted entity, or empty if no such entity exists
+     * @throws RepositoryException if a database access error occurs
+     */
     @Override
     public Optional<Warning> delete(Long aLong) {
         try {
