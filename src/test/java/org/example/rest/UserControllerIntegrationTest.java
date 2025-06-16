@@ -85,7 +85,7 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(post("/users/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", Matchers.containsString("Username already exists!")));
     }
 

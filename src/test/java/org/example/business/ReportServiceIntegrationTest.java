@@ -1,6 +1,5 @@
 package org.example.business;
 
-import org.example.business.exception.DataAccessException;
 import org.example.business.exception.ValidationException;
 import org.example.domain.Report;
 import org.example.domain.User;
@@ -25,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest(classes = start.StartRestServices.class)
 @Transactional
 @ActiveProfiles("test")
+
 public class ReportServiceIntegrationTest {
 
     @Autowired
@@ -89,8 +89,8 @@ public class ReportServiceIntegrationTest {
         assertThatThrownBy(() -> reportService.create(invalidReport))
                 .isInstanceOf(ValidationException.class);
 
-        // 2. CRITICAL: Verify that NO report was saved to the database.
-        // This proves that the @Transactional annotation successfully rolled back the transaction.
+        // Verify that no report was saved to the database.
+        // This proves that the we successfully rolled back the transaction.
         List<Report> reportsFromDb = reportRepository.getAllOfUser(testUser.getId());
         assertThat(reportsFromDb).isEmpty();
     }

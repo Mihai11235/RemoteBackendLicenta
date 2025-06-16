@@ -2,7 +2,7 @@ package org.example.persistence;
 
 
 import org.example.domain.Entity;
-import org.example.domain.validators.ValidationException;
+import org.example.business.exception.ValidationException;
 import java.util.Optional;
 
 /**
